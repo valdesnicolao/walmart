@@ -1,0 +1,145 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "# Neural Time Series Forescasting"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "['Local', 'Item', 'Unidades', 'Venta', 'Inventario']"
+      ]
+     },
+     "execution_count": 1,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "import pandas as pd\n",
+    "import matplotlib.pyplot as plt\n",
+    "import numpy as  np\n",
+    "import seaborn as sns #estadisticas basicas de visualizacion\n",
+    "\n",
+    "sns.set(style=\"whitegrid\", color_codes=True)\n",
+    "\n",
+    "path='../2018_01_23_datos_walmart/'\n",
+    "df_train = pd.read_csv(path +'1_data.csv', index_col=0)\n",
+    "\n",
+    "#sacar todos los Item que no sean 3,4,14,66,70,168,173,316,415,475\n",
+    "items=[3,4,14,40,66,70,168,173,316,415,475]\n",
+    "#df = df[df.Item==1]\n",
+    "df_train=df_train[df_train['Item'].isin(items)]#los que se encuentran en el arreglo\n",
+    "\n",
+    "\n",
+    "df_train.index = pd.to_datetime(df_train.index)\n",
+    "df_train.shape #dimensionalidad\n",
+    "\n",
+    "df_train.columns.values.tolist()\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "#Agregar"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "def expand_df(df):\n",
+    "    data = df.copy()\n",
+    "    #data['month'] = data.index.month\n",
+    "    #data['year'] = data.index.year\n",
+    "    data['weekend'] = np.int32(data.index.dayofweek > 3)\n",
+    "    return data\n",
+    "\n",
+    "df_train=expand_df(df_train)\n",
+    "df_train.tail()  #devolver las filas"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "De manera de utilizar redes neuronales, debemos convertir las series de tiempo en un problema de aprendizaje supervisado.\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "def series_to_supervised(data, window=1, lag=1, dropnan=True):\n",
+    "    cols, names = list(), list()\n",
+    "    # Input sequence (t-n, ... t-1)\n",
+    "    for i in range(window, 0, -1):\n",
+    "        cols.append(data.shift(i))\n",
+    "        names += [('%s(t-%d)' % (col, i)) for col in data.columns]\n",
+    "    # Current timestep (t=0)\n",
+    "    cols.append(data)\n",
+    "    names += [('%s(t)' % (col)) for col in data.columns]\n",
+    "    # Target timestep (t=lag)\n",
+    "    cols.append(data.shift(-lag))\n",
+    "    names += [('%s(t+%d)' % (col, lag)) for col in data.columns]\n",
+    "    # Put it all together\n",
+    "    agg = pd.concat(cols, axis=1)\n",
+    "    agg.columns = names\n",
+    "    # Drop rows with NaN values\n",
+    "    if dropnan:\n",
+    "        agg.dropna(inplace=True)\n",
+    "    return agg\n",
+    "\n",
+    "window = 1 # t - windows\n",
+    "lag = 1 # t + lag\n",
+    "df_train = series_to_supervised(df_train, window=window, lag=lag)\n",
+    "df_train.columns.values.tolist()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 2",
+   "language": "python",
+   "name": "python2"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 2
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython2",
+   "version": "2.7.15rc1"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 2
+}
